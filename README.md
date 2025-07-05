@@ -5,5 +5,5 @@ npm install
 
 ### 界面启动
 ```powershell
-npm run dec
+npm run dev
 ```
