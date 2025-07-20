@@ -3,13 +3,15 @@
 import React, { useState, useRef } from 'react';
 import { Upload, message, Button, Progress } from 'antd';
 import { InboxOutlined, StopOutlined } from '@ant-design/icons';
-import { uploadFile } from '../../services/mock';
+import { uploadFile } from '../../services/fileService';
+import { useFileContext } from '../../stores/FileContext';
 
 const { Dragger } = Upload;
 
 const MAX_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
 
 const FileUpload: React.FC<{ onUploadSuccess?: () => void }> = ({ onUploadSuccess }) => {
+  const { refreshFiles } = useFileContext();
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [fileList, setFileList] = useState([]);
@@ -28,22 +30,26 @@ const FileUpload: React.FC<{ onUploadSuccess?: () => void }> = ({ onUploadSucces
     return true;
   };
 
-  // 使用mock服务上传
+  // 使用真实API上传
   const customRequest = async (options: any) => {
     const { file, onSuccess, onError } = options;
     setUploading(true);
     setProgress(30);
     try {
-      const res = await uploadFile(file);
+      const res = await uploadFile(file, 'JFR');
       if (res.code === 1) {
         setProgress(100);
+        // 立即刷新文件列表
+        await refreshFiles();
+        message.success('上传成功');
+        onSuccess && onSuccess();
+        onUploadSuccess && onUploadSuccess();
+        
+        // 延迟重置上传状态
         setTimeout(() => {
           setUploading(false);
           setProgress(0);
           setFileList([]);
-          message.success('上传成功');
-          onSuccess && onSuccess();
-          onUploadSuccess && onUploadSuccess();
         }, 500);
       } else {
         throw new Error(res.msg || '上传失败');
